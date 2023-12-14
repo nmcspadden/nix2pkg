@@ -127,7 +127,6 @@ class LocalIOHelper:
 
 
 class NetworkIOHelper:
-
     release_url_x86 = (
         "http://yum/macos/standalone/nix-2.3.14pre7112_bd4e03d-x86_64-darwin.tar.xz"
     )
