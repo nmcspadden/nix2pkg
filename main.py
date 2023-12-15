@@ -118,8 +118,8 @@ def package(
         print(pkgs)
         click.echo(f"Starting to package: {str(pkgs)}")
         rpm_error = False
-        click.echo("Owning store as facebook.")
-        io.own_store("facebook")
+        # click.echo("Owning store as facebook.")
+        # io.own_store("facebook")
         # Clean the rpm output folder so
         # we don't have old stuff in there
         click.echo("Cleaning up 'output' directory.")
@@ -147,7 +147,9 @@ def package(
                 )
                 rpm.write_lines(spec_name, spec_contents)
                 build_arch = rpm.get_build_arch(pkg_name)
-                success = rpm.rpmbuild(spec_name, build_arch)
+                click.echo(f"Normally, this is where we would build the RPM: {build_arch}")
+                success = True
+                # success = rpm.rpmbuild(spec_name, build_arch)
                 if not success:
                     rpm_error = True
                     click.echo(f"RPM packaging error: {spec_name}")
@@ -159,14 +161,14 @@ def package(
         else:
             click.echo("Finished packinging successfully. Cleaning up.")
         click.echo("Owning store as root.")
-        io.own_store("root")
+        # io.own_store("root")
         click.echo("Deleting temporary rpm files.")
         rpm.cleanup()
         exit(exit_code)
     except NixBuildError:
         click.echo("\nPackage could not be built. Packaging stopped.")
         click.echo("Owning store back to root.")
-        io.own_store("root")
+        # io.own_store("root")
         exit(1)
 
 

@@ -21,7 +21,7 @@ class NixBuildError(Exception):
 
 
 class NixHelper:
-    fwdproxy = True
+    fwdproxy = False
     # Nix binary paths
     nix = os.path.join(Paths.NIX_BIN, "nix")
     nix_env = os.path.join(Paths.NIX_BIN, "nix-env")
@@ -42,7 +42,7 @@ class NixHelper:
     @contextmanager
     def _set_enviromentals(self, force_build: bool = False):
         saved = dict(os.environ)
-        # See https://github.com/NixOS/nix/blob/master/tests/common.sh.in
+        # See https://github.com/NixOS/nix/blob/master/tests/functional/common/vars-and-functions.sh.in
         os.environ["NIX_STORE_DIR"] = Paths.NIX_STORE
         os.environ["NIX_STATE_DIR"] = Paths.NIX_STATE
         os.environ["NIX_LOG_DIR"] = Paths.NIX_LOG
