@@ -9,9 +9,9 @@ from libs.nix_helper import NixBuildError, NixHelper
 from libs.rpm_helper import RPMHelper
 
 
-@click.group(epilog="Example: get ffmpeg RPMs: nix2rpm prepare, nix2rpm package ffmpeg")
+@click.group(epilog="Example: get ffmpeg RPMs: nix2pkg prepare, nix2pkg package ffmpeg")
 def cli() -> None:
-    """Nix2RPM is a tool for creating RPMs for macOS. It uses Nix package manager."""
+    """nix2pkg is a tool for creating RPMs for macOS. It uses Nix package manager."""
     pass
 
 
@@ -43,7 +43,7 @@ def prepare() -> None:
             click.echo("Cleaning leftover files")
             fs.clean_install_files(archive)
     else:
-        click.echo("Nix2rpm is already prepared.")
+        click.echo("nix2pkg is already prepared.")
 
 
 @click.command()
@@ -101,19 +101,19 @@ def destroy() -> None:
 def package(
     repo, force, pkgs, arm: bool, x86: bool, max_jobs: int, build_logs: bool
 ) -> None:
-    """Installs the specified package and create RPMs for
+    """Installs the specified package and create pkgs for
     it and its dependencies.
     Running 'install' first is NOT required.
-    RPMs will be in a directory called 'output/'.
+    PKGs will be in a directory called 'output/'.
     Optionally, append -<version> to the package name
     to specify a specific version. Example:
-    nix2rpm package wget OR nix2rpm package wget-1.20.3"""
+    nix2pkg package wget OR nix2pkg package wget-1.20.3"""
     pkgs = list(pkgs)
     nix = NixHelper()
     rpm = RPMHelper()
     io = LocalIOHelper()
     if not nix.is_installed():
-        click.echo("Nix2rpm needs to be prepared")
+        click.echo("nix2pkg needs to be prepared")
         exit(1)
     try:
         pkgs = nix.add_cross_compile_pkgs(pkgs, arm, x86)
