@@ -10,16 +10,20 @@ from libs.system_helper import Architecture
 
 
 class Paths:
+    # These paths are hardcoded - you will need to adjust these for what version of nix you have installed
+    # Some day, I'll figure out how to determine these paths programatically
     if Architecture.is_x86():
         # X86
+        # These are out of date
         nix_path = "68mfbnrkd4kghrai35f9rz6hn737fn98-nix-2.3.14pre7112_bd4e03d"
         nss_path = "8k0nxlkbmw6am0mn5xm5j7p0ir1z5g65-nss-cacert-3.66"
     else:
         # ARM
-        nix_path = "c4i2mz8xgq1gpfrvck96kwlp21pmpwfm-nix-2.3.16pre7127_2e80a42"
-        nss_path = "vqxdzmwcs8jv41nsyx6448mfv7qpnb9b-nss-cacert-3.66"
+        nix_path = "53r8ay20mygy2sifn7j2p8wjqlx2kxik-nix-2.19.2"
+        nss_path = "8ma7xas2nb0i3lq8mm7fpgalv94s8pzh-nss-cacert-3.92"
 
-    NIX_INSTALL = "/opt/facebook/nix"
+    # /nix is the default path; change this to match whatever you install with
+    NIX_INSTALL = "/nix"
     NIX_STORE = os.path.join(NIX_INSTALL, "store")
     NIX_PACKAGE = os.path.join(NIX_STORE, nix_path)
     NIX_BIN = os.path.join(NIX_PACKAGE, "bin")
@@ -136,7 +140,7 @@ class NetworkIOHelper:
     )
 
     # Download archive returning its name
-    def download_release(self) -> str:
+    def download_release(self, public=True) -> str:
         if Architecture.is_x86():
             return self._download_file_curl(self.release_url_x86)
         else:

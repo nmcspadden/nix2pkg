@@ -23,6 +23,7 @@ def prepare() -> None:
     fs = LocalIOHelper()
     nix = NixHelper()
     if not nix.is_installed():
+        click.echo("Nix is not installed, doing the FB-style install which will fail")
         click.echo("Downloading archive.")
         archive = net.download_release()
         try:
@@ -51,9 +52,10 @@ def destroy() -> None:
     It is not necessary to run this.
     All Nix packages including those installed via RPM
     are removed."""
-    click.echo("Removing nix2rpm.")
-    fs = LocalIOHelper()
-    fs.removal()
+    click.echo("Removing nix2pkg.")
+    click.echo("Normally we'd call fs.removal() here, but commented out")
+    # fs = LocalIOHelper()
+    # fs.removal()
     click.echo("Finished removal.")
 
 
@@ -161,14 +163,14 @@ def package(
         else:
             click.echo("Finished packinging successfully. Cleaning up.")
         click.echo("Owning store as root.")
-        # io.own_store("root")
+        io.own_store("root")
         click.echo("Deleting temporary rpm files.")
         rpm.cleanup()
         exit(exit_code)
     except NixBuildError:
         click.echo("\nPackage could not be built. Packaging stopped.")
         click.echo("Owning store back to root.")
-        # io.own_store("root")
+        io.own_store("root")
         exit(1)
 
 
