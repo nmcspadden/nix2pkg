@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# nix2pkg-specific output
+*.tar.gz
+nix_repo/
+
 # C extensions
 *.so
 
