@@ -131,7 +131,7 @@ def package(
             # let's stop building stuff
             if rpm_error:
                 break
-            click.echo(f"Bulding: {pkg}")
+            click.echo(f"Building: {pkg}")
             click.echo(f"Using repo: {repo}")
             nix.switch_profile(pkg)
             base_names = nix.build_pkg(pkg, force, repo, max_jobs, build_logs)

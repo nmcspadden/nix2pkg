@@ -210,6 +210,8 @@ class NixHelper:
             cmd = []
             cmd.append(self.nix)
             cmd.append("build")
+            # This seems to be necessary in 2.19+; it complains loudly otherwise
+            cmd.append("--extra-experimental-features nix-command")
             cmd.append("-f")
             cmd.append(nix_repo_root + "/default.nix")
             cmd.append("-o")
