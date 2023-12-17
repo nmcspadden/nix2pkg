@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import glob
 import os
 import traceback
 
@@ -160,15 +161,30 @@ def package(
                 deps_pairs = [nix.separate_name_hash(p) for p in deps]
                 click.echo(f"Dependencies: {deps_pairs}")
                 if pkg:
-                    success: bool = create_pkg(pkgh, pkg_path, pkg_name, pkg_hash, deps_pairs)
+                    success: bool = create_cpkg(
+                        pkgh, pkg_path, pkg_name, pkg_hash, deps_pairs
+                    )
                 else:
-                    success: bool = create_rpm(rpm, pkg_path, pkg_name, pkg_hash, deps_pairs)
+                    success: bool = create_rpm(
+                        rpm, pkg_path, pkg_name, pkg_hash, deps_pairs
+                    )
                 if not success:
-                    rpm_error = True
-                    click.echo(f"RPM packaging error: {pkg_path}")
+                    pkg_error = True
+                    click.echo(f"Packaging error: {pkg_path}")
                     break
+        # if pkg:
+        # TODO: This code is currently broken, need to research how to properly
+        # create a distribution package
+        #     click.echo("Building distribution package now")
+        #     # We take the first package from the list to use as our primary
+        #     pkg_hash, pkg_name = nix.separate_name_hash(all_pkgs[0])
+        #     success: bool = create_dpkg(pkgh, pkg_name, pkg_hash)
+        #     if not success:
+        #         pkg_error = True
+        #         click.echo("Packaging error during distribution build")
+
         exit_code = 0
-        if rpm_error:
+        if pkg_error:
             click.echo("There were errors during packaging. Cleaning up.")
             exit_code = 1
         else:
@@ -186,7 +202,7 @@ def package(
 
 
 # Create the RPM
-def create_rpm(rpm, pkg_path, pkg_name, pkg_hash, deps_pairs) -> bool:
+def create_rpm(rpm: RPMHelper, pkg_path, pkg_name, pkg_hash, deps_pairs) -> bool:
     print("Creating RPM")
     spec_name = f"{pkg_name}-{pkg_hash}.spec"
     spec_contents = rpm.generate_spec(pkg_path, pkg_name, pkg_hash, deps_pairs)
@@ -198,11 +214,23 @@ def create_rpm(rpm, pkg_path, pkg_name, pkg_hash, deps_pairs) -> bool:
     return success
 
 
-# Create the Apple package
-def create_pkg(pkg, pkg_path, pkg_name, pkg_hash, deps_pairs) -> bool:
+# Create the component Apple packages
+def create_cpkg(pkg: PkgHelper, pkg_path, pkg_name, pkg_hash, deps_pairs) -> bool:
     print("Creating PKG")
-    # stuff
-    success = True
+    # Create the component packages
+    identifier = f"com.meta.nix2pkg.{pkg_hash}-{pkg_name}"
+    version = "1.0"
+    success = pkg.build_component_pkg(
+        pkg_path, identifier, version, pkg_name, pkg_hash, os.curdir
+    )
+    return success
+
+
+# Create the distribution Apple package out of the components
+def create_dpkg(pkgh: PkgHelper, pkg_name, pkg_hash) -> bool:
+    # Assume all the component package are in the "./packages" folder
+    components = glob.glob("./packages/*.pkg")
+    success = pkgh.build_dist_pkg(components, pkg_name, pkg_hash, os.curdir)
     return success
 
 

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import os
+import shutil
 import subprocess
+import tempfile
 from typing import List
 
 
@@ -25,6 +27,9 @@ class PkgHelper:
         cmd.append(os.path.join(output_dir, self._dist_pkg_name(pkg_name, pkg_hash)))
 
         result = subprocess.run(cmd, capture_output=True)
+        if not result.returncode == 0:
+            print(result.stdout)
+            print(result.stderr)
         return result.returncode == 0
 
     # Create a component package file, throw error if package did not succeed
@@ -37,17 +42,28 @@ class PkgHelper:
         pkg_hash: str,
         output_dir: str,
     ) -> bool:
-        cmd = [
-            "/usr/bin/pkgbuild",
-            "--root",
-            root_dir,
-            "--identifier",
-            identifier,
-            "--version",
-            version,
-            os.path.join(output_dir, self._comp_pkg_name(pkg_name, pkg_hash)),
-        ]
-        result = subprocess.run(cmd, capture_output=True)
+        with tempfile.TemporaryDirectory() as tmproot:
+            # Copy actual root into tmproot
+            fixed_root = os.path.join(tmproot, root_dir.lstrip("/"))
+            print(f"Copying {root_dir} into {tmproot}")
+            shutil.copytree(root_dir, fixed_root, dirs_exist_ok=True)
+            cmd = [
+                "/usr/bin/pkgbuild",
+                "--root",
+                tmproot,
+                "--identifier",
+                identifier,
+                "--version",
+                version,
+                os.path.join(output_dir, self._comp_pkg_name(pkg_name, pkg_hash)),
+            ]
+            # print("pkgbuild command: ")
+            # print(" ".join(cmd))
+            print("Running pkgbuild command")
+            result = subprocess.run(cmd, capture_output=True)
+        if not result.returncode == 0:
+            print(result.stdout)
+            print(result.stderr)
         return result.returncode == 0
 
     # Generate component package name based on package name and version/hash
