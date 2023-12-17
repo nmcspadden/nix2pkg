@@ -4,8 +4,10 @@ import os
 import traceback
 
 import click
+
 from libs.io_helper import LocalIOHelper, NetworkIOHelper
 from libs.nix_helper import NixBuildError, NixHelper
+from libs.pkg_helper import PkgHelper
 from libs.rpm_helper import RPMHelper
 
 
@@ -98,8 +100,14 @@ def destroy() -> None:
     is_flag=True,
     help="Print full build logs.",
 )
+@click.option(
+    "--pkg",
+    default=False,
+    is_flag=True,
+    help="Create an Apple distribution pkg instead of an RPM.",
+)
 def package(
-    repo, force, pkgs, arm: bool, x86: bool, max_jobs: int, build_logs: bool
+    force, repo, pkgs, arm: bool, x86: bool, max_jobs: int, build_logs: bool, pkg: bool
 ) -> None:
     """Installs the specified package and create pkgs for
     it and its dependencies.
@@ -111,6 +119,7 @@ def package(
     pkgs = list(pkgs)
     nix = NixHelper()
     rpm = RPMHelper()
+    pkgh = PkgHelper()
     io = LocalIOHelper()
     if not nix.is_installed():
         click.echo("nix2pkg needs to be prepared")
@@ -126,19 +135,20 @@ def package(
         # we don't have old stuff in there
         click.echo("Cleaning up 'output' directory.")
         rpm.clean_output()
-        for pkg in pkgs:
+        for package in pkgs:
             # If a previous rpm failed to package,
             # let's stop building stuff
             if rpm_error:
                 break
-            click.echo(f"Building: {pkg}")
+            click.echo(f"Building: {package}")
             click.echo(f"Using repo: {repo}")
-            nix.switch_profile(pkg)
+            nix.switch_profile(package)
             click.echo("Building phase started")
-            base_names = nix.build_pkg(pkg, force, repo, max_jobs, build_logs)
-            click.echo(f"Build phase done: {pkg}")
+            base_names = nix.build_pkg(package, force, repo, max_jobs, build_logs)
+            click.echo(f"Build phase done: {package}")
             click.echo(f"Preparing to package: {base_names}")
             all_pkgs = nix.get_pkgs_to_pack(base_names)
+            click.echo(f"Packages to pack: {all_pkgs}")
             # Make a new temp dir
             packages_dir = os.path.join(os.curdir, "packages")
             os.makedirs(packages_dir, exist_ok=True)
@@ -148,18 +158,14 @@ def package(
                 click.echo(f"Packaging: {pkg_name}")
                 deps = nix.get_pkgs_references(pkg_path)
                 deps_pairs = [nix.separate_name_hash(p) for p in deps]
-                spec_name = f"{pkg_name}-{pkg_hash}.spec"
-                spec_contents = rpm.generate_spec(
-                    pkg_path, pkg_name, pkg_hash, deps_pairs
-                )
-                rpm.write_lines(spec_name, spec_contents)
-                build_arch = rpm.get_build_arch(pkg_name)
-                click.echo(f"Normally, this is where we would build the RPM: {build_arch}")
-                success = True
-                # success = rpm.rpmbuild(spec_name, build_arch)
+                click.echo(f"Dependencies: {deps_pairs}")
+                if pkg:
+                    success: bool = create_pkg(pkgh, pkg_path, pkg_name, pkg_hash, deps_pairs)
+                else:
+                    success: bool = create_rpm(rpm, pkg_path, pkg_name, pkg_hash, deps_pairs)
                 if not success:
                     rpm_error = True
-                    click.echo(f"RPM packaging error: {spec_name}")
+                    click.echo(f"RPM packaging error: {pkg_path}")
                     break
         exit_code = 0
         if rpm_error:
@@ -177,6 +183,27 @@ def package(
         click.echo("Owning store back to root.")
         # io.own_store("root")
         exit(1)
+
+
+# Create the RPM
+def create_rpm(rpm, pkg_path, pkg_name, pkg_hash, deps_pairs) -> bool:
+    print("Creating RPM")
+    spec_name = f"{pkg_name}-{pkg_hash}.spec"
+    spec_contents = rpm.generate_spec(pkg_path, pkg_name, pkg_hash, deps_pairs)
+    rpm.write_lines(spec_name, spec_contents)
+    build_arch = rpm.get_build_arch(pkg_name)
+    print(f"Normally, this is where we would build the RPM: {build_arch}")
+    success = True
+    # success = rpm.rpmbuild(spec_name, build_arch)
+    return success
+
+
+# Create the Apple package
+def create_pkg(pkg, pkg_path, pkg_name, pkg_hash, deps_pairs) -> bool:
+    print("Creating PKG")
+    # stuff
+    success = True
+    return success
 
 
 cli.add_command(prepare)
