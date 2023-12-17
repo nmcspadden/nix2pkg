@@ -159,7 +159,8 @@ class NixHelper:
     ) -> List[str]:
         base_names = []
         has_error = False
-        build_result_dir = "fb_build_result"
+        # TODO: customize this
+        build_result_dir = "build_result"
         with self._set_enviromentals(force):
             url = ""
             nix_channel_regepx = re.compile(r"^\d\d\.\d\d(-pre|-beta)?$")
@@ -172,20 +173,24 @@ class NixHelper:
             else:
                 url = repo
 
+            print("Downloading nixpkgs tarball from Github")
             nio = NetworkIOHelper()
-            nio._download_file_curl(url, "repo.tar.gz")
+            # Temorarily commenting this out since we already have it
+            # nio._download_file_curl(url, "repo.tar.gz")
 
             if not os.path.isfile("repo.tar.gz"):
                 print("Error: can't find downloaded repo file.")
                 raise NixBuildError()
 
+            print("Extracting downloaded tarball")
             # Extract the tarball to a folder called nix_repo
-            if os.path.isdir("nix_repo"):
-                shutil.rmtree("nix_repo")
-            file = tarfile.open("repo.tar.gz")
-            file.extractall("./nix_repo")
-            file.close()
+            # if os.path.isdir("nix_repo"):
+            #     shutil.rmtree("nix_repo")
+            # file = tarfile.open("repo.tar.gz")
+            # file.extractall("./nix_repo")
+            # file.close()
 
+            print("Configuring repo root")
             nix_repo_root = ""
             if os.path.exists("./nix_repo/default.nix"):
                 nix_repo_root = os.path.dirname("./nix_repo/")
@@ -200,6 +205,7 @@ class NixHelper:
                     print("Error: can't determine repo root.")
                     raise NixBuildError()
 
+            print("Patch bootstrap script")
             patched = self._patch_bootstrap(nix_repo_root)
             if patched:
                 print("Bootstrap patch: Success!")
@@ -207,11 +213,13 @@ class NixHelper:
                 print("Bootstrap patch: NO PATCHING HAPPENED! WEIRD!")
 
             # Now we can build things!
+            print("Building package")
             cmd = []
             cmd.append(self.nix)
-            cmd.append("build")
             # This seems to be necessary in 2.19+; it complains loudly otherwise
-            cmd.append("--extra-experimental-features nix-command")
+            cmd.append("--extra-experimental-features")
+            cmd.append("nix-command")
+            cmd.append("build")
             cmd.append("-f")
             cmd.append(nix_repo_root + "/default.nix")
             cmd.append("-o")

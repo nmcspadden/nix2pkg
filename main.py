@@ -134,10 +134,15 @@ def package(
             click.echo(f"Building: {pkg}")
             click.echo(f"Using repo: {repo}")
             nix.switch_profile(pkg)
+            click.echo("Building phase started")
             base_names = nix.build_pkg(pkg, force, repo, max_jobs, build_logs)
             click.echo(f"Build phase done: {pkg}")
             click.echo(f"Preparing to package: {base_names}")
             all_pkgs = nix.get_pkgs_to_pack(base_names)
+            # Make a new temp dir
+            packages_dir = os.path.join(os.curdir, "packages")
+            os.makedirs(packages_dir, exist_ok=True)
+            os.chdir(packages_dir)
             for pkg_path in all_pkgs:
                 pkg_hash, pkg_name = nix.separate_name_hash(pkg_path)
                 click.echo(f"Packaging: {pkg_name}")
@@ -163,14 +168,14 @@ def package(
         else:
             click.echo("Finished packinging successfully. Cleaning up.")
         click.echo("Owning store as root.")
-        io.own_store("root")
+        # io.own_store("root")
         click.echo("Deleting temporary rpm files.")
         rpm.cleanup()
         exit(exit_code)
     except NixBuildError:
         click.echo("\nPackage could not be built. Packaging stopped.")
         click.echo("Owning store back to root.")
-        io.own_store("root")
+        # io.own_store("root")
         exit(1)
 
 
