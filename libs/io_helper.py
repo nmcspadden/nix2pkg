@@ -35,7 +35,9 @@ class Paths:
     NIX_LOG = os.path.join(NIX_VAR, "log/nix")
     NIX_CONFIG = os.path.join(NIX_INSTALL, "conf")
     CONFIG_FILE = os.path.join(NIX_CONFIG, "nix/nix.conf")
-    PACKAGES_OUT = os.path.join(pathlib.Path(__file__).parent.parent.resolve(), "packages")
+    PACKAGES_OUT = os.path.join(
+        pathlib.Path(__file__).parent.parent.resolve(), "packages"
+    )
 
 
 class WrongArchiveType(Exception):
@@ -134,19 +136,21 @@ class LocalIOHelper:
 
 class NetworkIOHelper:
     release_url_x86 = (
-        "http://yum/macos/standalone/nix-2.3.14pre7112_bd4e03d-x86_64-darwin.tar.xz"
+        "replace me"
     )
 
     release_url_arm = (
-        "http://yum/macos/standalone/nix-2.3.16pre7127_2e80a42-aarch64-darwin.tar.xz"
+        "replace me"
     )
 
     # Download archive returning its name
     def download_release(self, public=True) -> str:
-        if Architecture.is_x86():
-            return self._download_file_curl(self.release_url_x86)
-        else:
-            return self._download_file_curl(self.release_url_arm)
+        # TODO: Replace this with DeterminateSystems installer pkg
+        # if Architecture.is_x86():
+        #     return self._download_file_curl(self.release_url_x86)
+        # else:
+        #     return self._download_file_curl(self.release_url_arm)
+        return
 
     # Download file in curl subprocess
     def _download_file_curl(
