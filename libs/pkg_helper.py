@@ -20,6 +20,9 @@ class PkgHelper:
         pkg_hash: str,
         output_dir: str,
     ) -> bool:
+        if len(component_packages) == 0:
+            print("No component packages to build dist pkg!")
+            return False
         cmd = ["/usr/bin/productbuild"]
         for pkg in component_packages:
             cmd.append("--package")

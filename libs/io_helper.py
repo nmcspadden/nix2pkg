@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import glob
 import os
+import pathlib
 import shutil
 import subprocess
 import tarfile
@@ -34,6 +35,7 @@ class Paths:
     NIX_LOG = os.path.join(NIX_VAR, "log/nix")
     NIX_CONFIG = os.path.join(NIX_INSTALL, "conf")
     CONFIG_FILE = os.path.join(NIX_CONFIG, "nix/nix.conf")
+    PACKAGES_OUT = os.path.join(pathlib.Path(__file__).parent.parent.resolve(), "packages")
 
 
 class WrongArchiveType(Exception):

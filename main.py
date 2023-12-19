@@ -6,7 +6,7 @@ import traceback
 
 import click
 
-from libs.io_helper import LocalIOHelper, NetworkIOHelper
+from libs.io_helper import LocalIOHelper, NetworkIOHelper, Paths
 from libs.nix_helper import NixBuildError, NixHelper
 from libs.pkg_helper import PkgHelper
 from libs.rpm_helper import RPMHelper
@@ -122,6 +122,8 @@ def package(
     rpm = RPMHelper()
     pkgh = PkgHelper()
     io = LocalIOHelper()
+    nix_paths = Paths()
+    pkg_error = False
     if not nix.is_installed():
         click.echo("nix2pkg needs to be prepared")
         exit(1)
@@ -162,26 +164,28 @@ def package(
                 click.echo(f"Dependencies: {deps_pairs}")
                 if pkg:
                     success: bool = create_cpkg(
-                        pkgh, pkg_path, pkg_name, pkg_hash, deps_pairs
+                        nix_paths,
+                        pkgh,
+                        pkg_path,
+                        pkg_name,
+                        pkg_hash,
                     )
                 else:
                     success: bool = create_rpm(
-                        rpm, pkg_path, pkg_name, pkg_hash, deps_pairs
+                        nix_paths, rpm, pkg_path, pkg_name, pkg_hash
                     )
                 if not success:
                     pkg_error = True
                     click.echo(f"Packaging error: {pkg_path}")
                     break
-        # if pkg:
-        # TODO: This code is currently broken, need to research how to properly
-        # create a distribution package
-        #     click.echo("Building distribution package now")
-        #     # We take the first package from the list to use as our primary
-        #     pkg_hash, pkg_name = nix.separate_name_hash(all_pkgs[0])
-        #     success: bool = create_dpkg(pkgh, pkg_name, pkg_hash)
-        #     if not success:
-        #         pkg_error = True
-        #         click.echo("Packaging error during distribution build")
+        if pkg:
+            click.echo("Building distribution package now")
+            # We take the first package from the list to use as our primary
+            pkg_hash, pkg_name = nix.separate_name_hash(all_pkgs[0])
+            success: bool = create_dpkg(nix_paths, pkgh, pkg_name, pkg_hash)
+            if not success:
+                pkg_error = True
+                click.echo("Packaging error during distribution build")
 
         exit_code = 0
         if pkg_error:
@@ -210,27 +214,31 @@ def create_rpm(rpm: RPMHelper, pkg_path, pkg_name, pkg_hash, deps_pairs) -> bool
     build_arch = rpm.get_build_arch(pkg_name)
     print(f"Normally, this is where we would build the RPM: {build_arch}")
     success = True
-    # success = rpm.rpmbuild(spec_name, build_arch)
+    success = rpm.rpmbuild(spec_name, build_arch)
     return success
 
 
 # Create the component Apple packages
-def create_cpkg(pkg: PkgHelper, pkg_path, pkg_name, pkg_hash, deps_pairs) -> bool:
+def create_cpkg(nix_paths: Paths, pkg: PkgHelper, pkg_path, pkg_name, pkg_hash) -> bool:
     print("Creating PKG")
     # Create the component packages
     identifier = f"com.meta.nix2pkg.{pkg_hash}-{pkg_name}"
     version = "1.0"
     success = pkg.build_component_pkg(
-        pkg_path, identifier, version, pkg_name, pkg_hash, os.curdir
+        pkg_path, identifier, version, pkg_name, pkg_hash, nix_paths.PACKAGES_OUT
     )
     return success
 
 
 # Create the distribution Apple package out of the components
-def create_dpkg(pkgh: PkgHelper, pkg_name, pkg_hash) -> bool:
+def create_dpkg(nix_paths: Paths, pkgh: PkgHelper, pkg_name, pkg_hash) -> bool:
     # Assume all the component package are in the "./packages" folder
-    components = glob.glob("./packages/*.pkg")
-    success = pkgh.build_dist_pkg(components, pkg_name, pkg_hash, os.curdir)
+    print(os.path.join(nix_paths.PACKAGES_OUT, "*.pkg"))
+    components = glob.glob(os.path.join(nix_paths.PACKAGES_OUT, "*.pkg"))
+    print(f"Component packages: {components}")
+    success = pkgh.build_dist_pkg(
+        components, pkg_name, pkg_hash, nix_paths.PACKAGES_OUT
+    )
     return success
 
 
