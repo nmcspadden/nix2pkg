@@ -27,12 +27,15 @@ class PkgHelper:
         for pkg in component_packages:
             cmd.append("--package")
             cmd.append(pkg)
-        cmd.append(os.path.join(output_dir, self._dist_pkg_name(pkg_name, pkg_hash)))
+        pkg_name = os.path.join(output_dir, self._dist_pkg_name(pkg_name, pkg_hash))
+        cmd.append(pkg_name)
 
         result = subprocess.run(cmd, capture_output=True)
         if not result.returncode == 0:
             print(result.stdout)
             print(result.stderr)
+        else:
+            print(f"Package found at {pkg_name}")
         return result.returncode == 0
 
     # Create a component package file, throw error if package did not succeed
@@ -48,7 +51,7 @@ class PkgHelper:
         with tempfile.TemporaryDirectory() as tmproot:
             # Copy actual root into tmproot
             fixed_root = os.path.join(tmproot, root_dir.lstrip("/"))
-            print(f"Copying {root_dir} into {tmproot}")
+            # print(f"Copying {root_dir} into {tmproot}")
             shutil.copytree(root_dir, fixed_root, dirs_exist_ok=True)
             cmd = [
                 "/usr/bin/pkgbuild",
@@ -62,7 +65,7 @@ class PkgHelper:
             ]
             # print("pkgbuild command: ")
             # print(" ".join(cmd))
-            print("Running pkgbuild command")
+            # print("Running pkgbuild command")
             result = subprocess.run(cmd, capture_output=True)
         if not result.returncode == 0:
             print(result.stdout)

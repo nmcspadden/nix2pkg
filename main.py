@@ -129,14 +129,13 @@ def package(
         exit(1)
     try:
         pkgs = nix.add_cross_compile_pkgs(pkgs, arm, x86)
-        print(pkgs)
         click.echo(f"Starting to package: {str(pkgs)}")
         rpm_error = False
         # click.echo("Owning store as facebook.")
         # io.own_store("facebook")
         # Clean the rpm output folder so
         # we don't have old stuff in there
-        click.echo("Cleaning up 'output' directory.")
+        click.echo("Cleaning up RPM 'output' directory.")
         rpm.clean_output()
         for package in pkgs:
             # If a previous rpm failed to package,
@@ -149,19 +148,19 @@ def package(
             click.echo("Building phase started")
             base_names = nix.build_pkg(package, force, repo, max_jobs, build_logs)
             click.echo(f"Build phase done: {package}")
-            click.echo(f"Preparing to package: {base_names}")
+            # click.echo(f"Preparing to package: {base_names}")
             all_pkgs = nix.get_pkgs_to_pack(base_names)
-            click.echo(f"Packages to pack: {all_pkgs}")
+            # click.echo(f"Packages to pack: {all_pkgs}")
             # Make a new temp dir
             packages_dir = os.path.join(os.curdir, "packages")
             os.makedirs(packages_dir, exist_ok=True)
             os.chdir(packages_dir)
             for pkg_path in all_pkgs:
                 pkg_hash, pkg_name = nix.separate_name_hash(pkg_path)
-                click.echo(f"Packaging: {pkg_name}")
+                # click.echo(f"Packaging: {pkg_name}")
                 deps = nix.get_pkgs_references(pkg_path)
                 deps_pairs = [nix.separate_name_hash(p) for p in deps]
-                click.echo(f"Dependencies: {deps_pairs}")
+                # click.echo(f"Dependencies: {deps_pairs}")
                 if pkg:
                     success: bool = create_cpkg(
                         nix_paths,
@@ -172,14 +171,14 @@ def package(
                     )
                 else:
                     success: bool = create_rpm(
-                        nix_paths, rpm, pkg_path, pkg_name, pkg_hash
+                        rpm, pkg_path, pkg_name, pkg_hash, deps_pairs
                     )
                 if not success:
                     pkg_error = True
                     click.echo(f"Packaging error: {pkg_path}")
                     break
         if pkg:
-            click.echo("Building distribution package now")
+            click.echo("Building distribution package")
             # We take the first package from the list to use as our primary
             pkg_hash, pkg_name = nix.separate_name_hash(all_pkgs[0])
             success: bool = create_dpkg(nix_paths, pkgh, pkg_name, pkg_hash)
@@ -193,14 +192,14 @@ def package(
             exit_code = 1
         else:
             click.echo("Finished packinging successfully. Cleaning up.")
-        click.echo("Owning store as root.")
+        # click.echo("Owning store as root.")
         # io.own_store("root")
-        click.echo("Deleting temporary rpm files.")
-        rpm.cleanup()
+        # click.echo("Deleting temporary rpm files.")
+        # rpm.cleanup()
         exit(exit_code)
     except NixBuildError:
         click.echo("\nPackage could not be built. Packaging stopped.")
-        click.echo("Owning store back to root.")
+        # click.echo("Owning store back to root.")
         # io.own_store("root")
         exit(1)
 
@@ -212,15 +211,13 @@ def create_rpm(rpm: RPMHelper, pkg_path, pkg_name, pkg_hash, deps_pairs) -> bool
     spec_contents = rpm.generate_spec(pkg_path, pkg_name, pkg_hash, deps_pairs)
     rpm.write_lines(spec_name, spec_contents)
     build_arch = rpm.get_build_arch(pkg_name)
-    print(f"Normally, this is where we would build the RPM: {build_arch}")
-    success = True
     success = rpm.rpmbuild(spec_name, build_arch)
     return success
 
 
 # Create the component Apple packages
 def create_cpkg(nix_paths: Paths, pkg: PkgHelper, pkg_path, pkg_name, pkg_hash) -> bool:
-    print("Creating PKG")
+    print(f"Creating component package for {pkg_name}")
     # Create the component packages
     identifier = f"com.meta.nix2pkg.{pkg_hash}-{pkg_name}"
     version = "1.0"
@@ -233,9 +230,8 @@ def create_cpkg(nix_paths: Paths, pkg: PkgHelper, pkg_path, pkg_name, pkg_hash) 
 # Create the distribution Apple package out of the components
 def create_dpkg(nix_paths: Paths, pkgh: PkgHelper, pkg_name, pkg_hash) -> bool:
     # Assume all the component package are in the "./packages" folder
-    print(os.path.join(nix_paths.PACKAGES_OUT, "*.pkg"))
+    # print("Creating distribution package")
     components = glob.glob(os.path.join(nix_paths.PACKAGES_OUT, "*.pkg"))
-    print(f"Component packages: {components}")
     success = pkgh.build_dist_pkg(
         components, pkg_name, pkg_hash, nix_paths.PACKAGES_OUT
     )
