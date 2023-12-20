@@ -247,6 +247,3 @@ cli.add_command(package)
 
 if __name__ == "__main__":
     cli()
-
-# TODO: This needs Python 3.10 at a minimum
-/usr/
