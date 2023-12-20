@@ -48,11 +48,11 @@ class PkgHelper:
         pkg_hash: str,
         output_dir: str,
     ) -> bool:
-        with tempfile.TemporaryDirectory() as tmproot:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmproot:
             # Copy actual root into tmproot
             fixed_root = os.path.join(tmproot, root_dir.lstrip("/"))
             # print(f"Copying {root_dir} into {tmproot}")
-            shutil.copytree(root_dir, fixed_root, dirs_exist_ok=True)
+            shutil.copytree(root_dir, fixed_root, symlinks=True, ignore_dangling_symlinks=True, dirs_exist_ok=True)
             cmd = [
                 "/usr/bin/pkgbuild",
                 "--root",

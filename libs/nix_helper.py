@@ -23,7 +23,7 @@ class NixBuildError(Exception):
 class NixHelper:
     fwdproxy = False
     # Nix binary paths
-    nix = os.path.join(Paths.NIX_BIN, "nix")
+    nix = Paths.NIX_BINARY
     nix_env = os.path.join(Paths.NIX_BIN, "nix-env")
     nix_store = os.path.join(Paths.NIX_BIN, "nix-store")
 
@@ -129,8 +129,8 @@ class NixHelper:
     # Is nix2rpm prepared?
     def is_installed(self) -> bool:
         current_nix_installed = os.path.exists(Paths.NIX_PACKAGE)
-        nix_profile_present = os.path.islink(os.path.expanduser("~/.nix-profile"))
-        return current_nix_installed and nix_profile_present
+        nix_binary = os.path.exists(Paths.NIX_BINARY)
+        return current_nix_installed and nix_binary
 
     # Return list of pkgs matching searchterm from all nix pkgs
     def search(self, term: str) -> List[str]:
@@ -216,19 +216,21 @@ class NixHelper:
             print("Building package")
             cmd = []
             cmd.append(self.nix)
-            # This seems to be necessary in 2.19+; it complains loudly otherwise
+            # # This seems to be necessary in 2.19+; it complains loudly otherwise
             cmd.append("--extra-experimental-features")
             cmd.append("nix-command")
+            cmd.append("--extra-experimental-features")
+            cmd.append("flakes")
             cmd.append("build")
-            cmd.append("-f")
-            cmd.append(nix_repo_root + "/default.nix")
+            # cmd.append("-f")
+            # cmd.append(nix_repo_root + "/default.nix")
             cmd.append("-o")
             cmd.append(build_result_dir)
             cmd.append("-j")
             cmd.append(str(max_jobs))
             if build_logs:
                 cmd.append("-L")
-            cmd.append(pkg_name)
+            cmd.append(f"nixpkgs#{pkg_name}")
             # Just in case it exists already
             to_delete = glob.glob(f"{build_result_dir}*")
             for entry in to_delete:

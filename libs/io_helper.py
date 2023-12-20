@@ -20,11 +20,12 @@ class Paths:
         nss_path = "8k0nxlkbmw6am0mn5xm5j7p0ir1z5g65-nss-cacert-3.66"
     else:
         # ARM
-        nix_path = "53r8ay20mygy2sifn7j2p8wjqlx2kxik-nix-2.19.2"
-        nss_path = "8ma7xas2nb0i3lq8mm7fpgalv94s8pzh-nss-cacert-3.92"
+        nix_path = "0pbq6wzr2f1jgpn5212knyxpwmkjgjah-nix-2.18.1"
+        nss_path = "gmqzqg2xlhk29bzx2ms00w5zc6d1l80a-nss-cacert-3.92"
 
     # /nix is the default path; change this to match whatever you install with
     NIX_INSTALL = "/nix"
+    NIX_BINARY = os.path.join(NIX_INSTALL, "var/nix/profiles/default/bin/nix")
     NIX_STORE = os.path.join(NIX_INSTALL, "store")
     NIX_PACKAGE = os.path.join(NIX_STORE, nix_path)
     NIX_BIN = os.path.join(NIX_PACKAGE, "bin")

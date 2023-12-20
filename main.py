@@ -157,11 +157,14 @@ def package(
             os.chdir(packages_dir)
             for pkg_path in all_pkgs:
                 pkg_hash, pkg_name = nix.separate_name_hash(pkg_path)
-                # click.echo(f"Packaging: {pkg_name}")
+                click.echo(f"Packaging: {pkg_name}")
                 deps = nix.get_pkgs_references(pkg_path)
                 deps_pairs = [nix.separate_name_hash(p) for p in deps]
                 # click.echo(f"Dependencies: {deps_pairs}")
                 if pkg:
+                    # print(f"Package path: {pkg_path}")
+                    if not os.path.isdir(pkg_path):
+                        continue
                     success: bool = create_cpkg(
                         nix_paths,
                         pkgh,
@@ -244,3 +247,6 @@ cli.add_command(package)
 
 if __name__ == "__main__":
     cli()
+
+# TODO: This needs Python 3.10 at a minimum
+/usr/
