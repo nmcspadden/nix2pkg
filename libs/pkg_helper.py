@@ -24,6 +24,9 @@ class PkgHelper:
             return False
         cmd = ["/usr/bin/productbuild"]
         for pkg in component_packages:
+            # Skip distribution packages created already
+            if "nix2pkg-" in pkg:
+                continue
             cmd.append("--package")
             cmd.append(pkg)
         pkg_name = os.path.join(output_dir, self._dist_pkg_name(pkg_name))
