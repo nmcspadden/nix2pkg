@@ -17,7 +17,6 @@ class PkgHelper:
         self,
         component_packages: List[str],
         pkg_name: str,
-        pkg_hash: str,
         output_dir: str,
     ) -> bool:
         if len(component_packages) == 0:
@@ -27,7 +26,7 @@ class PkgHelper:
         for pkg in component_packages:
             cmd.append("--package")
             cmd.append(pkg)
-        pkg_name = os.path.join(output_dir, self._dist_pkg_name(pkg_name, pkg_hash))
+        pkg_name = os.path.join(output_dir, self._dist_pkg_name(pkg_name))
         cmd.append(pkg_name)
 
         result = subprocess.run(cmd, capture_output=True)
@@ -80,8 +79,8 @@ class PkgHelper:
         return name
 
     # Generate dist package name
-    def _dist_pkg_name(self, pkg_name: str, pkg_hash: str) -> str:
-        name = f"nix2pkg-{pkg_name}-{pkg_hash}.pkg"
+    def _dist_pkg_name(self, pkg_name: str) -> str:
+        name = f"nix2pkg-{pkg_name}.pkg"
         # sanitization because this symbol causes errors with some web hosts
         name = name.replace("+", "plus")
         return name

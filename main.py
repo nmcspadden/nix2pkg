@@ -183,8 +183,7 @@ def package(
         if pkg:
             click.echo("Building distribution package")
             # We take the first package from the list to use as our primary
-            pkg_hash, pkg_name = nix.separate_name_hash(all_pkgs[0])
-            success: bool = create_dpkg(nix_paths, pkgh, pkg_name, pkg_hash)
+            success: bool = create_dpkg(nix_paths, pkgh, package)
             if not success:
                 pkg_error = True
                 click.echo("Packaging error during distribution build")
@@ -231,12 +230,12 @@ def create_cpkg(nix_paths: Paths, pkg: PkgHelper, pkg_path, pkg_name, pkg_hash) 
 
 
 # Create the distribution Apple package out of the components
-def create_dpkg(nix_paths: Paths, pkgh: PkgHelper, pkg_name, pkg_hash) -> bool:
+def create_dpkg(nix_paths: Paths, pkgh: PkgHelper, pkg_name: str) -> bool:
     # Assume all the component package are in the "./packages" folder
     # print("Creating distribution package")
     components = glob.glob(os.path.join(nix_paths.PACKAGES_OUT, "*.pkg"))
     success = pkgh.build_dist_pkg(
-        components, pkg_name, pkg_hash, nix_paths.PACKAGES_OUT
+        components, pkg_name, nix_paths.PACKAGES_OUT
     )
     return success
 
