@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import glob
 import os
+import pathlib
 import re
 import shutil
 import subprocess
 import tarfile
+import time
 from contextlib import contextmanager
 from typing import List, Tuple
 
@@ -173,22 +175,29 @@ class NixHelper:
             else:
                 url = repo
 
-            print("Downloading nixpkgs tarball from Github")
-            nio = NetworkIOHelper()
-            # Temorarily commenting this out since we already have it
-            # nio._download_file_curl(url, "repo.tar.gz")
+            print("Looking for existing nix_repo folder")
+            # Check to see if we've got a recent copy of the nixpkgs repo
+            nix_repo_unpack_dir = os.path.join(
+                pathlib.Path(__file__).parent.parent.resolve(), "nix_repo"
+            )
 
-            if not os.path.isfile("repo.tar.gz"):
-                print("Error: can't find downloaded repo file.")
-                raise NixBuildError()
+            if not self.is_folder_old(nix_repo_unpack_dir):
+                print("Existing folder is younger than an hour, using it")
+            else:
+                print("Downloading nixpkgs tarball from Github")
+                nio = NetworkIOHelper()
+                nio._download_file_curl(url, "repo.tar.gz")
+                if not os.path.isfile("repo.tar.gz"):
+                    print("Error: can't find downloaded repo file.")
+                    raise NixBuildError()
 
-            print("Extracting downloaded tarball")
-            # Extract the tarball to a folder called nix_repo
-            # if os.path.isdir("nix_repo"):
-            #     shutil.rmtree("nix_repo")
-            # file = tarfile.open("repo.tar.gz")
-            # file.extractall("./nix_repo")
-            # file.close()
+                print("Extracting downloaded tarball")
+                # Extract the tarball to a folder called nix_repo
+                if os.path.isdir("nix_repo"):
+                    shutil.rmtree("nix_repo")
+                file = tarfile.open("repo.tar.gz")
+                file.extractall("./nix_repo")
+                file.close()
 
             print("Configuring repo root")
             nix_repo_root = ""
@@ -328,3 +337,19 @@ class NixHelper:
                     if x86:
                         new_pkgs.append(f"pkgsCross.x86_64-darwin.{pkg}")
         return new_pkgs
+    
+    # Return the age of the folder in seconds
+    def calc_nix_repo_age(self, folder: str) -> int:
+        folder_mtime = os.stat(folder).st_mtime
+        # Calculate the age of the folder in seconds
+        current_time = time.time()
+        return current_time - folder_mtime
+
+    # Return true if the folder is older than 60 minutes
+    def is_folder_old(self, folder: str) -> bool:
+        if not os.path.isdir(folder):
+            return False
+        # age in seconds
+        nix_folder_age = self.calc_nix_repo_age(folder)
+        age_in_mins = nix_folder_age/ (60)
+        return age_in_mins > 60
