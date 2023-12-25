@@ -234,9 +234,7 @@ def create_dpkg(nix_paths: Paths, pkgh: PkgHelper, pkg_name: str) -> bool:
     # Assume all the component package are in the "./packages" folder
     # print("Creating distribution package")
     components = glob.glob(os.path.join(nix_paths.PACKAGES_OUT, "*.pkg"))
-    success = pkgh.build_dist_pkg(
-        components, pkg_name, nix_paths.PACKAGES_OUT
-    )
+    success = pkgh.build_dist_pkg(components, pkg_name, nix_paths.PACKAGES_OUT)
     return success
 
 

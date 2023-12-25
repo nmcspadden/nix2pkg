@@ -23,7 +23,6 @@ class NixBuildError(Exception):
 
 
 class NixHelper:
-    fwdproxy = False
     # Nix binary paths
     nix = Paths.NIX_BINARY
     nix_env = os.path.join(Paths.NIX_BIN, "nix-env")
@@ -68,24 +67,10 @@ class NixHelper:
             os.environ["NIXPKGS_ALLOW_UNSUPPORTED_SYSTEM"] = "1"
             os.environ["NIXPKGS_ALLOW_BROKEN"] = "1"
 
-        if self.fwdproxy:
-            self._set_fwdproxy_enviromentals()
         yield
         # Restore previous enviromental vars state
         os.environ.clear()
         os.environ.update(saved)
-
-    # Additional enviromental vars for nix binaries to fetch under fwdproxy
-    def _set_fwdproxy_enviromentals(self) -> None:
-        # TODO Should this be part of the program? If so, change to SSL.
-        os.environ["no_proxy"] = (
-            ".fbcdn.net,.facebook.com,.thefacebook.com,"
-            ".tfbnw.net,.fb.com,.fburl.com,.facebook.net,.sb.fbsbx.com,localhost"
-        )
-        os.environ["http_proxy"] = "fwdproxy:8080"
-        os.environ["https_proxy"] = "fwdproxy:8080"
-        os.environ["ftp_proxy"] = "fwdproxy:8080"
-        os.environ["CURL_NIX_FLAGS"] = "-x http://fwdproxy:8080 --proxy-insecure"
 
     def _patch_bootstrap(self, nix_repo_root: str) -> bool:
         # Patch the bootstrap to not fail on binary patching failures
@@ -337,7 +322,7 @@ class NixHelper:
                     if x86:
                         new_pkgs.append(f"pkgsCross.x86_64-darwin.{pkg}")
         return new_pkgs
-    
+
     # Return the age of the folder in seconds
     def calc_nix_repo_age(self, folder: str) -> int:
         folder_mtime = os.stat(folder).st_mtime
@@ -351,5 +336,5 @@ class NixHelper:
             return False
         # age in seconds
         nix_folder_age = self.calc_nix_repo_age(folder)
-        age_in_mins = nix_folder_age/ (60)
+        age_in_mins = nix_folder_age / (60)
         return age_in_mins > 60
